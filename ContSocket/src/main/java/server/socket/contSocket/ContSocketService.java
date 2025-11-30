@@ -15,6 +15,7 @@ public class ContSocketService extends Thread{
 	// TODO Cambiar por numero de containers o lo que hayais decidido
 	private static final int NUMBEROFUSERS = 100;
 	
+	
     private static final Logger LOGGER = Logger.getLogger(ContSocketService.class.getName());
 
     private DataInputStream in;
