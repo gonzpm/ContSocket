@@ -3,27 +3,18 @@ package ContSocket;
 import java.io.IOException;
 import java.net.ServerSocket;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
+public class TCPContSocketServer extends Thread {
 
+    private final int port;
 
-@Component
-public class TCPContSocketServer implements CommandLineRunner {
-
-	@Value("${contsocket.port}")    
-	private int port;
-
-	@Value("${contsocket.host}")    
-	private String host;
-
-    @Override
-    public void run(String... args) {
-        new Thread(() -> startServer()).start();
+    public TCPContSocketServer(int port) {
+        this.port = port;
     }
 
-    private void startServer() {
+    @Override
+    public void run() {
         int numClients = 0;
+
         try (ServerSocket server = new ServerSocket(port)) {
             System.out.println("- TCPContSocketServer: Waiting for connections on port " + port);
 
