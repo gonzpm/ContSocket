@@ -3,21 +3,28 @@ package ContSocket;
 import java.io.IOException;
 import java.net.ServerSocket;
 
-public class TCPContSocketServer {
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
 
-    private static int numClients = 0;
 
-    public static void main(String[] args) {
+@Component
+public class TCPContSocketServer implements CommandLineRunner {
 
-        if (args.length < 1) {
-            System.err.println("# Usage: TCPContSocketServer [PORT]");
-            System.exit(1);
-        }
+	@Value("${contsocket.port}")    
+	private int port;
 
-        int port = Integer.parseInt(args[0]);
+	@Value("${contsocket.host}")    
+	private String host;
 
+    @Override
+    public void run(String... args) {
+        new Thread(() -> startServer()).start();
+    }
+
+    private void startServer() {
+        int numClients = 0;
         try (ServerSocket server = new ServerSocket(port)) {
-
             System.out.println("- TCPContSocketServer: Waiting for connections on port " + port);
 
             while (true) {
