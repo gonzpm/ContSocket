@@ -2,35 +2,31 @@ package ContSocket;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-//import server.socket.contSocket.ContSocketService;
-// DONE
 public class TCPContSocketServer {
-	
-	 private static final Logger LOGGER = Logger.getLogger(TCPContSocketServer.class.getName());
-	 private static int numClients = 0;
 
-	 public static void main(String args[]) {
-	     if (args.length < 1) {
-	         LOGGER.log(Level.SEVERE, " # Usage: TCPSocketSever [PORT]");
-	         System.exit(1);
-	     }
+    private static int numClients = 0;
 
-	     int serverPort = Integer.parseInt(args[0]);
-	     startServer(serverPort);
-	 }
-	    
-	 private static void startServer(int serverPort) {
-	     try (ServerSocket tcpServerSocket = new ServerSocket(serverPort)) {
-	         LOGGER.log(Level.INFO, " - TCPSocketFacebookServer: Waiting for connections '" + tcpServerSocket.getInetAddress().getHostAddress() + ":" + tcpServerSocket.getLocalPort() + "' ...");
-	         while (true) {
-	             new ContSocketService(tcpServerSocket.accept());
-	             LOGGER.log(Level.INFO, " - TCPSocketFacebookServer: New client connection accepted. Client Number: " + numClients++);
-	         }
-	     } catch (IOException e) {
-	         LOGGER.log(Level.SEVERE, "# TCPSocketFacebookServer: IO error:" + e.getMessage());
-	     }
-     } 
+    public static void main(String[] args) {
+
+        if (args.length < 1) {
+            System.err.println("# Usage: TCPContSocketServer [PORT]");
+            System.exit(1);
+        }
+
+        int port = Integer.parseInt(args[0]);
+
+        try (ServerSocket server = new ServerSocket(port)) {
+
+            System.out.println("- TCPContSocketServer: Waiting for connections on port " + port);
+
+            while (true) {
+                new ContSocketService(server.accept());
+                System.out.println("- TCPContSocketServer: New client accepted. Number: " + ++numClients);
+            }
+
+        } catch (IOException e) {
+            System.err.println("# TCPContSocketServer: IO error: " + e.getMessage());
+        }
+    }
 }

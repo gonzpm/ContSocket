@@ -5,91 +5,88 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Random;
 
-public class ContSocketService extends Thread{
-	
-	// TODO Cambiar por numero de containers o lo que hayais decidido
-	private static final int NUMBEROFUSERS = 100;
-	
-	
-    private static final Logger LOGGER = Logger.getLogger(ContSocketService.class.getName());
+public class ContSocketService extends Thread {
+
+    private static final String DELIMITER = "#";
+    private static final int MAX_CAPACITY = 10000;
 
     private DataInputStream in;
     private DataOutputStream out;
     private Socket tcpSocket;
 
-    // TODO aqui habrá numero de dumpsters o la info que vayamos a manejar
-    private Map<String, String> facebookusers;
+    private Map<LocalDate, Double> capacity;
 
     public ContSocketService(Socket socket) {
-    	// AVISO :Iniciar los valores de nuestro método, no los que están ahora comentados abajo
-    	//initUsers();
+        initCapacities();
         try {
-            tcpSocket = socket;
-            in = new DataInputStream(socket.getInputStream());
-            out = new DataOutputStream(socket.getOutputStream());
-            start();
+            this.tcpSocket = socket;
+            this.in = new DataInputStream(socket.getInputStream());
+            this.out = new DataOutputStream(socket.getOutputStream());
+            this.start();
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "# EchoService - TCPConnection IO error:" + e.getMessage());
+            System.err.println("# ContSocketService - TCPConnection IO error:" + e.getMessage());
         }
     }
-    
+
     @Override
     public void run() {
         try {
-            String data = in.readUTF();
-            LOGGER.log(Level.INFO, "   - EchoService - Received data from '" + tcpSocket.getInetAddress().getHostAddress() + ":" + tcpSocket.getPort() + "' -> '" + data + "'");
-            
-            // AVISO : error porq tenemos que meter nuestro método, no sus dos que están comentados ahora
-            boolean response;
-            String[] args = data.split(";");
-            if (args.length == 1) {
-                //response = checkUser(args[0]);
-            } else {
-               // response = checkPassword(args[0], args[1]);
-            }
+            String data = this.in.readUTF();
+            System.out.println(" - ContSocketService - Received: '" + data + "'");
 
-            //out.writeUTF(Boolean.toString(response));
-            LOGGER.log(Level.INFO, "   - EchoService - Sent data to '" + tcpSocket.getInetAddress().getHostAddress() + ":" + tcpSocket.getPort() + "' -> '" + data.toUpperCase() + "'");
+            String response = process(data);
+
+            this.out.writeUTF(response);
+            System.out.println(" - ContSocketService - Sent: '" + response + "'");
+
         } catch (EOFException e) {
-            LOGGER.log(Level.SEVERE, "   # EchoService - TCPConnection EOF error" + e.getMessage());
+            System.err.println("# ContSocketService - EOF error: " + e.getMessage());
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "   # EchoService - TCPConnection IO error:" + e.getMessage());
+            System.err.println("# ContSocketService - IO error: " + e.getMessage());
         } finally {
             try {
                 tcpSocket.close();
             } catch (IOException e) {
-                LOGGER.log(Level.SEVERE, "   # EchoService - TCPConnection IO error:" + e.getMessage());
+                System.err.println("# ContSocketService - Closing error: " + e.getMessage());
             }
         }
     }
-//   AVISO :  DEL DE STRAVA ---> HAY QUE METER NUESTRO MÉTODO Y INICIALIZARLO CON ESTOS COMO EJEMPLO  
-//    
-//    private boolean checkUser(String userEmail){
-//        return facebookusers.containsKey(userEmail);
-//    }
-//
-//    private boolean checkPassword(String userEmail, String userPassword){
-//        if (facebookusers.containsKey(userEmail)) {
-//            return userPassword.equals(facebookusers.get(userEmail));
-//        }
-//        return false;
-//    }
-//    
-//	private void initUsers() {
-//		facebookusers = new HashMap<String, String>();
-//		facebookusers.put("diego.merino@opendeusto.es", org.apache.commons.codec.digest.DigestUtils.sha1Hex("123"));
-//		facebookusers.put("miguel.acha@opendeusto.es", org.apache.commons.codec.digest.DigestUtils.sha1Hex("123"));
-//		
-//        for (int i = 1; i < NUMBEROFUSERS + 1; i++) {
-//            String email = "user" + i + "@gmail.com";
-//            String password =  org.apache.commons.codec.digest.DigestUtils.sha1Hex("123");
-//            facebookusers.put(email, password);
-//        }
-//	}
-	
+
+    private String process(String data) {
+        try {
+            String[] parts = data.split(DELIMITER);
+
+            if (parts.length != 2 || !parts[0].equals("CHECK"))
+                return "ERR";
+
+            LocalDate date = LocalDate.parse(parts[1], DateTimeFormatter.ISO_LOCAL_DATE);
+            boolean exists = capacity.containsKey(date);
+
+            return "OK" + DELIMITER + exists;
+
+        } catch (Exception e) {
+            System.err.println("# ContSocketService - Error processing request: " + e.getMessage());
+            return "ERR";
+        }
+    }
+
+    private void initCapacities() {
+        capacity = new HashMap<>();
+        Random random = new Random();
+
+        capacity.put(LocalDate.of(2025, 1, 1), 8080.0);
+        capacity.put(LocalDate.of(2025, 1, 2), 5200.0);
+
+        for (int i = 0; i < MAX_CAPACITY; i++) {
+            LocalDate date = LocalDate.of(2025, 1, 3).plusDays(i);
+            double cap = 1000 + random.nextDouble() * 8000;
+            capacity.put(date, cap);
+        }
+    }
 }
