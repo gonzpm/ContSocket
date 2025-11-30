@@ -1,4 +1,4 @@
-package server.socket.ContSocket;
+package ContSocket;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
