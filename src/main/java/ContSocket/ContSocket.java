@@ -5,7 +5,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-
 public class ContSocket {
 
     private String serverIP;
@@ -16,31 +15,38 @@ public class ContSocket {
         this.serverIP = ip;
         this.serverPort = port;
     }
-
-    public boolean checkDate(String date) {
-
-        String request = "CHECK" + DELIMITER + date;
-        String response = null;
-
+    
+    public float getCapacity() {
+        String request = "GET_CAPACITY";
+        String response = sendRequest(request);
+        
+        try {
+            return Float.parseFloat(response);
+        } catch (NumberFormatException e) {
+            System.err.println("Error parsing capacity: " + response);
+            return -1;
+        }
+    }
+    
+    public boolean updateCapacity(float amount) {
+        String request = "UPDATE_CAPACITY:" + amount;
+        String response = sendRequest(request);
+        
+        return response.startsWith("OK");
+    }
+    
+    private String sendRequest(String request) {
         try (Socket socket = new Socket(serverIP, serverPort);
              DataInputStream in = new DataInputStream(socket.getInputStream());
              DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
-
+            
             out.writeUTF(request);
-
-            response = in.readUTF();
-
-            String[] parts = response.split(DELIMITER);
-
-            if (!parts[0].equals("OK"))
-                return false;
-
-            return Boolean.parseBoolean(parts[1]);
-
+            return in.readUTF();
+            
         } catch (IOException e) {
-            System.err.println("# ContSocketClient error: " + e.getMessage());
+            System.err.println("# ContSocket error: " + e.getMessage());
+            return "ERROR:" + e.getMessage();
         }
-
-        return false;
     }
+
 }

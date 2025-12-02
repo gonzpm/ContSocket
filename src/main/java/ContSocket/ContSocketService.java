@@ -17,13 +17,12 @@ public class ContSocketService extends Thread {
     private DataOutputStream out;
     private Socket tcpSocket;
 
-    private Map<LocalDate, Double> capacity;
+    private static Float current_capacity = 8000.0f;//Se inicializa una vez
     private static final double TOTAL_CAPACITY = 10000.0;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ContSocketService(Socket socket) {
-        initData();
         try {
             tcpSocket = socket;
             in = new DataInputStream(socket.getInputStream());
@@ -38,31 +37,13 @@ public class ContSocketService extends Thread {
     public void run() {
         try {
             String request = in.readUTF();
-            System.out.println(" - Received: " + request);
+            System.out.println(" - ContSocketService received: " + request);
 
-            @SuppressWarnings("unchecked")
-            Map<String, String> jsonReq = objectMapper.readValue(request, Map.class);
-
-            String action = jsonReq.get("action");
-
-            if (!"GET_CAPACITY".equals(action)) {
-                out.writeUTF("{\"error\":\"Invalid action\"}");
-                return;
-            }
-
-            LocalDate date = LocalDate.parse(jsonReq.get("date"));
-
-            double current = capacity.getOrDefault(date, 0.0);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("plant_name", "ContSocket");
-            response.put("current_capacity", current);
-            response.put("total_capacity", TOTAL_CAPACITY);
-
-            String jsonResponse = objectMapper.writeValueAsString(response);
-
-            out.writeUTF(jsonResponse);
-            System.out.println(" - Sent: " + jsonResponse);
+            String response = processRequest(request);
+           
+            out.writeUTF(response);
+            
+            System.out.println(" - ContSocketService sent: " + current_capacity);
 
         } catch (Exception e) {
             System.err.println("# ContSocketService Error: " + e.getMessage());
@@ -71,12 +52,35 @@ public class ContSocketService extends Thread {
         }
     }
 
-    private void initData() {
-        capacity = new HashMap<>();
-        Random r = new Random();
-        for (int i = 0; i < 365; i++) {
-            LocalDate d = LocalDate.of(2025, 1, 1).plusDays(i);
-            capacity.put(d, 2000 + r.nextDouble() * 8000);
+    private String processRequest(String request) {
+    	if(request.equals("GET_CAPACITY")) {
+    		return String.valueOf(current_capacity);
+    	} else if (request.startsWith("UPDATE_CAPACITY:")) {
+            try {
+                String[] parts = request.split(":");
+                float amount = Float.parseFloat(parts[1]);
+                
+                if (current_capacity - amount < 0) {
+                    return "ERROR:Insufficient capacity";
+                }
+                
+                current_capacity -= amount;
+                return "OK:" + current_capacity;
+                
+            } catch (Exception e) {
+                return "ERROR:Invalid format";
+            }
+            
+        } else {
+            return "ERROR:Unknown command";
         }
+    }
+    
+    public static float getCurrentCapacity() {
+        return current_capacity;
+    }
+    
+    public static void resetCapacity() {
+        current_capacity = 8000.0f;
     }
 }
