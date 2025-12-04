@@ -55,17 +55,14 @@ public class ContSocketService extends Thread {
     private String processRequest(String request) {
     	if(request.equals("GET_CAPACITY")) {
     		return String.valueOf(current_capacity);
-    	} else if (request.startsWith("UPDATE_CAPACITY:")) {
+    	} else if (request.startsWith("SEND_NOTIFICATION:")) {
             try {
                 String[] parts = request.split(":");
-                float amount = Float.parseFloat(parts[1]);
+                int dumpsters = Integer.parseInt(parts[1]);
+                int packages = Integer.parseInt(parts[2]);
+                float tons = Float.parseFloat(parts[3]);
                 
-                if (current_capacity - amount < 0) {
-                    return "ERROR:Insufficient capacity";
-                }
-                
-                current_capacity -= amount;
-                return "OK:" + current_capacity;
+                return "OK";
                 
             } catch (Exception e) {
                 return "ERROR:Invalid format";
