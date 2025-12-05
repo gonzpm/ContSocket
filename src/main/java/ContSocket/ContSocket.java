@@ -9,7 +9,6 @@ public class ContSocket {
 
     private String serverIP;
     private int serverPort;
-    private static final String DELIMITER = "#";
 
     public ContSocket(String ip, int port) {
         this.serverIP = ip;
@@ -28,12 +27,17 @@ public class ContSocket {
         }
     }
     
-    public boolean updateCapacity(float amount) {
-        String request = "UPDATE_CAPACITY:" + amount;
-        String response = sendRequest(request);
-        
-        return response.startsWith("OK");
-    }
+    //Receives notification from Ecoembes in the format SEND_NOTIFICATION:<dumpsters>:<packages>:<tons> and updates current capacity
+    public void receiveNotification(int dumpsters, int packages, float tons) {
+		String request = "SEND_NOTIFICATION:" + dumpsters + ":" + packages + ":" + tons;
+		String response = sendRequest(request);
+		
+		if (response.equals("OK")) {
+			System.out.println("(ContSocket info receiving) Everything went OK");
+		} else {
+			System.out.println("(ContSocket info receiving) Not everything went OK :(");
+		}
+	}
     
     private String sendRequest(String request) {
         try (Socket socket = new Socket(serverIP, serverPort);

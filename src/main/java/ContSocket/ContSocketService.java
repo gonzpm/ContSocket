@@ -4,12 +4,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 
 public class ContSocketService extends Thread {
 
@@ -17,10 +11,7 @@ public class ContSocketService extends Thread {
     private DataOutputStream out;
     private Socket tcpSocket;
 
-    private static Float current_capacity = 8000.0f;//Se inicializa una vez
-    private static final double TOTAL_CAPACITY = 10000.0;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static Float current_capacity = 10000.0f;//Se inicializa una vez
 
     public ContSocketService(Socket socket) {
         try {
@@ -57,12 +48,19 @@ public class ContSocketService extends Thread {
     		return String.valueOf(current_capacity);
     	} else if (request.startsWith("SEND_NOTIFICATION:")) {
             try {
-                String[] parts = request.split(":");
-                int dumpsters = Integer.parseInt(parts[1]);
-                int packages = Integer.parseInt(parts[2]);
-                float tons = Float.parseFloat(parts[3]);
-                
-                return "OK";
+                //ContSocket gets the notification in the format SEND_NOTIFICATION:<dumpsters>:<packages>:<tons> from Ecoembes and updates their current capacity
+           	 	String[] parts = request.split(":");
+           	 	if (parts.length != 4) {
+					return "ERROR:Invalid format";
+				}
+           	 	int dumpsters = Integer.parseInt(parts[1]);
+           	 	int packages = Integer.parseInt(parts[2]);
+           	 	float tons = Float.parseFloat(parts[3]);
+           	 	System.out.println(" - ContSocketService processing notification: dumpsters=" + dumpsters + ", packages=" + packages + ", tons=" + tons);
+           	 	current_capacity -= tons;
+           	 	System.out.println(" - ContSocketService updated capacity: " + current_capacity);
+           	 	
+           	 	return "OK";
                 
             } catch (Exception e) {
                 return "ERROR:Invalid format";
@@ -78,6 +76,6 @@ public class ContSocketService extends Thread {
     }
     
     public static void resetCapacity() {
-        current_capacity = 8000.0f;
+        current_capacity = 10000.0f;
     }
 }
