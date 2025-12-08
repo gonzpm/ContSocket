@@ -55,7 +55,7 @@ public class ContSocketService extends Thread {
     private String processRequest(String request) {
     	if(request.equals("GET_CAPACITY")) {
     		return String.valueOf(current_capacity);
-    	} else if (request.startsWith("UPDATE_CAPACITY:")) {
+    	} else if (request.startsWith("SEND_NOTIFICATION:")) {
             try {
                 String[] parts = request.split(":");
                 float amount = Float.parseFloat(parts[1]);
@@ -65,7 +65,7 @@ public class ContSocketService extends Thread {
                 }
                 
                 current_capacity -= amount;
-                return "OK:" + current_capacity;
+                return "OK:" + current_capacity;	
                 
             } catch (Exception e) {
                 return "ERROR:Invalid format";
